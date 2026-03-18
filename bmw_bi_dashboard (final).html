@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeloIQ — BMW Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --bg2: #111218;
+    --bg3: #16181f;
+    --bg4: #1c1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f0f5;
+    --text2: #9a9aaa;
+    --text3: #5a5a6a;
+    --accent: #c8a96e;
+    --accent2: #e8c98e;
+    --accent-dim: rgba(200,169,110,0.12);
+    --accent-dim2: rgba(200,169,110,0.06);
+    --blue: #5b8af0;
+    --blue-dim: rgba(91,138,240,0.12);
+    --green: #4eb87a;
+    --green-dim: rgba(78,184,122,0.12);
+    --red: #e05c5c;
+    --red-dim: rgba(224,92,92,0.12);
+    --purple: #9b7de8;
+    --purple-dim: rgba(155,125,232,0.12);
+    --font-display: 'DM Serif Display', serif;
+    --font-sans: 'DM Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-mark svg { width: 16px; height: 16px; }
+  .logo-text { font-family: var(--font-display); font-size: 1.2rem; color: var(--text); letter-spacing: -0.02em; }
+  .logo-text span { color: var(--accent); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .pill {
+    font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500;
+    background: var(--accent-dim); color: var(--accent);
+    border: 1px solid rgba(200,169,110,0.25); border-radius: 20px;
+    padding: 3px 10px; letter-spacing: 0.04em;
+  }
+  .data-badge {
+    font-size: 0.75rem; color: var(--text3); font-family: var(--font-mono);
+  }
+
+  /* LAYOUT */
+  .app { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 56px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 1.5rem 1rem;
+    display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  .sidebar-section-label {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--text3); text-transform: uppercase; margin-bottom: 8px;
+    padding: 0 8px;
+  }
+  .query-chip {
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text2); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 0.82rem; font-family: var(--font-sans);
+    cursor: pointer; transition: all 0.15s ease; line-height: 1.4;
+    position: relative;
+  }
+  .query-chip::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; border-radius: 2px 0 0 2px;
+    background: transparent; transition: background 0.15s;
+  }
+  .query-chip:hover { background: var(--bg4); border-color: var(--border2); color: var(--text); }
+  .query-chip:hover::before { background: var(--accent); }
+  .query-chip.active { background: var(--accent-dim2); border-color: rgba(200,169,110,0.25); color: var(--text); }
+  .query-chip.active::before { background: var(--accent); }
+  .chip-label {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 3px;
+  }
+  .chip-complexity {
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em;
+    padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+  }
+  .c1 { background: var(--green-dim); color: var(--green); }
+  .c2 { background: var(--blue-dim); color: var(--blue); }
+  .c3 { background: var(--purple-dim); color: var(--purple); }
+  .chip-text { font-size: 0.8rem; color: inherit; }
+
+  .sidebar-stats { padding: 12px; background: var(--bg3); border-radius: var(--radius-sm); }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
+  .stat-row + .stat-row { border-top: 1px solid var(--border); }
+  .stat-k { font-size: 0.75rem; color: var(--text3); }
+  .stat-v { font-size: 0.82rem; font-family: var(--font-mono); color: var(--accent); font-weight: 500; }
+
+  /* MAIN */
+  .main { display: flex; flex-direction: column; background: var(--bg); }
+
+  /* QUERY BAR */
+  .query-bar {
+    padding: 1.5rem 2rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .query-bar-inner {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 0 16px;
+    transition: border-color 0.15s;
+  }
+  .query-bar-inner:focus-within { border-color: rgba(200,169,110,0.4); }
+  .query-icon { color: var(--accent); flex-shrink: 0; }
+  #queryInput {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--font-sans); font-size: 0.9rem;
+    padding: 14px 0; caret-color: var(--accent);
+  }
+  #queryInput::placeholder { color: var(--text3); }
+  .run-btn {
+    background: var(--accent); color: #0a0b0f;
+    border: none; border-radius: var(--radius-sm);
+    padding: 7px 16px; font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0; white-space: nowrap;
+  }
+  .run-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+  .run-btn:active { transform: translateY(0); }
+  .query-meta {
+    margin-top: 8px; font-size: 0.75rem; color: var(--text3);
+    display: flex; align-items: center; gap: 16px; padding: 0 4px;
+  }
+  .query-meta span { display: flex; align-items: center; gap: 5px; }
+
+  /* DASHBOARD AREA */
+  .dash-area { flex: 1; padding: 2rem; overflow-y: auto; }
+  .dash-title-row {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 1.5rem;
+  }
+  .dash-title { font-family: var(--font-display); font-size: 1.5rem; color: var(--text); }
+  .dash-subtitle { font-size: 0.82rem; color: var(--text3); }
+
+  /* KPI STRIP */
+  .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .kpi-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px; background: var(--accent-color, var(--accent));
+    opacity: 0.5;
+  }
+  .kpi-label { font-size: 0.72rem; font-weight: 600; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-family: var(--font-display); font-size: 1.8rem; color: var(--text); letter-spacing: -0.02em; }
+  .kpi-sub { font-size: 0.75rem; color: var(--text3); margin-top: 4px; }
+  .kpi-trend { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-top: 4px; }
+  .kpi-trend.up { background: var(--green-dim); color: var(--green); }
+  .kpi-trend.down { background: var(--red-dim); color: var(--red); }
+
+  /* CHART GRID */
+  .chart-grid { display: grid; gap: 16px; }
+  .chart-grid.cols2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid.cols3 { grid-template-columns: 2fr 1fr; }
+  .chart-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem;
+    position: relative;
+  }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .chart-card-title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+  .chart-card-subtitle { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+  .chart-type-badge {
+    font-size: 0.65rem; font-family: var(--font-mono); font-weight: 500;
+    color: var(--text3); background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px;
+  }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(10,11,15,0.85);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 999; backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: all; }
+  .loading-spinner {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { margin-top: 16px; font-size: 0.82rem; color: var(--text2); font-family: var(--font-mono); }
+  .loading-step { margin-top: 6px; font-size: 0.72rem; color: var(--text3); font-family: var(--font-mono); }
+
+  /* INSIGHT CARDS */
+  .insight-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .insight-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 0.78rem; color: var(--text2); line-height: 1.5;
+  }
+  .insight-card strong { color: var(--accent); font-weight: 500; }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.73rem; color: var(--text2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .data-table th {
+    text-align: left; padding: 8px 12px; color: var(--text3);
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border2); background: var(--bg3);
+  }
+  .data-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text2); }
+  .data-table tr:hover td { background: var(--bg4); }
+  .data-table .mono { font-family: var(--font-mono); color: var(--text); font-size: 0.78rem; }
+  .data-table .rank { font-family: var(--font-mono); color: var(--text3); font-size: 0.72rem; }
+
+  /* BAR INLINE */
+  .inline-bar { height: 4px; border-radius: 2px; background: var(--border2); margin-top: 4px; overflow: hidden; }
+  .inline-bar-fill { height: 100%; border-radius: 2px; }
+
+  /* FILTER CHIPS */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .filter-chip {
+    font-size: 0.75rem; padding: 4px 10px; border-radius: 20px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text2); cursor: pointer; transition: all 0.12s;
+    font-family: var(--font-sans);
+  }
+  .filter-chip:hover { border-color: var(--border2); color: var(--text); }
+  .filter-chip.on { background: var(--accent-dim); border-color: rgba(200,169,110,0.3); color: var(--accent); }
+
+  /* FOLLOW-UP CHAT */
+  .followup-area {
+    border-top: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 1rem 2rem;
+  }
+  .followup-label { font-size: 0.72rem; color: var(--text3); margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .followup-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .followup-chip {
+    font-size: 0.78rem; padding: 6px 12px; border-radius: 20px;
+    border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text2); cursor: pointer; transition: all 0.12s;
+    font-family: var(--font-sans);
+  }
+  .followup-chip:hover { border-color: rgba(200,169,110,0.3); color: var(--accent); background: var(--accent-dim2); }
+
+  /* WELCOME */
+  .welcome {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 3rem; gap: 1.5rem;
+  }
+  .welcome-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--accent-dim); border: 1px solid rgba(200,169,110,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+  }
+  .welcome h2 { font-family: var(--font-display); font-size: 1.8rem; color: var(--text); }
+  .welcome p { font-size: 0.88rem; color: var(--text3); max-width: 480px; line-height: 1.7; }
+  .welcome-queries { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 500px; }
+  .welcome-q {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 0.82rem; color: var(--text2); text-align: left; cursor: pointer;
+    transition: all 0.12s; font-family: var(--font-sans);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .welcome-q:hover { border-color: rgba(200,169,110,0.3); color: var(--text); background: var(--bg3); }
+  .welcome-q .arrow { color: var(--accent); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.4s ease forwards; }
+  .fade-in-delay { animation: fadeIn 0.4s ease 0.1s both; }
+  .fade-in-delay2 { animation: fadeIn 0.4s ease 0.2s both; }
+  .fade-in-delay3 { animation: fadeIn 0.4s ease 0.3s both; }
+
+  /* SQL PREVIEW */
+  .sql-preview {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 1rem;
+    font-family: var(--font-mono); font-size: 0.72rem; color: var(--text3);
+    display: flex; align-items: flex-start; gap: 10px;
+    cursor: pointer; transition: all 0.12s;
+  }
+  .sql-preview:hover { border-color: var(--border2); }
+  .sql-keyword { color: var(--blue); }
+  .sql-col { color: var(--accent); }
+  .sql-val { color: var(--green); }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid.cols2, .chart-grid.cols3 { grid-template-columns: 1fr; }
+    .insight-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Analyzing query...</div>
+  <div class="loading-step" id="loadingStep">Generating SQL</div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 8L6 4L10 8L14 4M2 12L6 8L10 12L14 8" stroke="#0a0b0f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="logo-text">Velo<span>IQ</span></span>
+  </div>
+  <div class="topbar-right">
+    <span class="data-badge">BMW Vehicle Inventory · 10,781 records</span>
+    <span class="pill">AI-POWERED</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-section-label">Suggested Queries</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <button class="query-chip" onclick="runQuery(1)">
+          <div class="chip-label"><span class="chip-complexity c1">Simple</span></div>
+          <div class="chip-text">Average price by fuel type</div>
+        </button>
+        <button class="query-chip" onclick="runQuery(2)">
+          <div class="chip-label"><span class="chip-complexity c2">Medium</span></div>
+          <div class="chip-text">Show monthly price trends by top 3 models over the years</div>
+        </button>
+        <button class="query-chip" onclick="runQuery(3)">
+          <div class="chip-label"><span class="chip-complexity c3">Complex</span></div>
+          <div class="chip-text">Depreciation analysis: price vs mileage by transmission type and fuel, with efficiency correlation</div>
+        </button>
+        <button class="query-chip" onclick="runQuery(4)">
+          <div class="chip-label"><span class="chip-complexity c2">Medium</span></div>
+          <div class="chip-text">Top 5 models by volume and their average MPG vs tax</div>
+        </button>
+        <button class="query-chip" onclick="runQuery(5)">
+          <div class="chip-label"><span class="chip-complexity c1">Simple</span></div>
+          <div class="chip-text">Engine size distribution across all models</div>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">Dataset Stats</div>
+      <div class="sidebar-stats">
+        <div class="stat-row"><span class="stat-k">Total Records</span><span class="stat-v">10,781</span></div>
+        <div class="stat-row"><span class="stat-k">BMW Models</span><span class="stat-v">22</span></div>
+        <div class="stat-row"><span class="stat-k">Year Range</span><span class="stat-v">1998–2020</span></div>
+        <div class="stat-row"><span class="stat-k">Avg Price</span><span class="stat-v">£27,614</span></div>
+        <div class="stat-row"><span class="stat-k">Fuel Types</span><span class="stat-v">5</span></div>
+        <div class="stat-row"><span class="stat-k">Transmissions</span><span class="stat-v">3</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-label">Data Columns</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>model</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">string</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>year</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">int</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>price</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">int</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>transmission</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">string</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>mileage</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">int</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>fuelType</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">string</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>tax</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">int</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>mpg</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">float</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:5px 8px;font-size:0.75rem;color:var(--text2);">
+          <span>engineSize</span><span style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;">float</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- QUERY BAR -->
+    <div class="query-bar">
+      <div class="query-bar-inner">
+        <svg class="query-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="queryInput" placeholder="Ask anything about the BMW inventory in plain English…" />
+        <button class="run-btn" onclick="submitQuery()">Generate Dashboard →</button>
+      </div>
+      <div class="query-meta">
+        <span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="var(--green)" stroke-width="1.2"/><path d="M4 6l1.5 1.5L8 4" stroke="var(--green)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          BMW Inventory · Active
+        </span>
+        <span>AI-powered SQL generation</span>
+        <span>Follow-up questions supported</span>
+      </div>
+    </div>
+
+    <!-- DASHBOARD AREA -->
+    <div class="dash-area" id="dashArea">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">⚡</div>
+        <h2>Ask Your Data</h2>
+        <p>Type any business question in plain English and get an interactive dashboard instantly. No SQL required.</p>
+        <div class="welcome-queries">
+          <button class="welcome-q" onclick="runQuery(1)">
+            <span>What's the average price by fuel type?</span>
+            <span class="arrow">→</span>
+          </button>
+          <button class="welcome-q" onclick="runQuery(2)">
+            <span>Show price trends for top 3 models over the years</span>
+            <span class="arrow">→</span>
+          </button>
+          <button class="welcome-q" onclick="runQuery(3)">
+            <span>Depreciation analysis across transmission types</span>
+            <span class="arrow">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOLLOW-UP -->
+    <div class="followup-area" id="followupArea" style="display:none;">
+      <div class="followup-label">Refine this dashboard</div>
+      <div class="followup-chips" id="followupChips"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// BMW DATASET (representative sample aggregations)
+// ═══════════════════════════════════════════════
+const BMW_DATA = {
+  avgPriceByFuel: {
+    labels: ['Diesel', 'Petrol', 'Hybrid', 'Electric', 'Other'],
+    prices: [26890, 28340, 34750, 42100, 19200],
+    counts: [4821, 4103, 987, 412, 458],
+    avgMpg: [57.4, 38.2, 61.8, 94.2, 41.0],
+    avgTax: [148, 182, 112, 0, 165]
+  },
+  priceByModel: {
+    labels: ['3 Series', '5 Series', '1 Series', 'X5', '4 Series', 'X3', '7 Series', 'X1', '6 Series', 'X6', 'M3', 'M5', '2 Series', 'Z4', '8 Series'],
+    avgPrice: [22400, 31200, 16800, 44200, 27900, 38100, 55000, 29400, 42100, 48300, 52100, 68000, 19200, 28600, 65000],
+    count: [2841, 1923, 1654, 987, 876, 743, 512, 689, 423, 398, 312, 187, 543, 234, 89],
+    avgMpg: [53.2, 47.8, 55.6, 38.4, 49.1, 41.2, 39.8, 44.3, 43.6, 36.2, 38.8, 34.1, 52.4, 45.9, 37.2]
+  },
+  priceTrend: {
+    years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+    '3 Series': [15200, 15900, 16800, 17400, 18200, 19100, 20400, 21200, 22100, 23400, 24800],
+    '5 Series': [22400, 23100, 24200, 25100, 26300, 27400, 28900, 30200, 31800, 33200, 35100],
+    'X5':       [32100, 33400, 35200, 36800, 38400, 40100, 42300, 44100, 46200, 48400, 51200]
+  },
+  mileageVsPrice: {
+    Automatic: [[12000,48000],[25000,42000],[40000,35000],[60000,28000],[80000,22000],[100000,17000],[120000,14000],[140000,11000]],
+    Manual:    [[10000,32000],[22000,28000],[38000,23000],[55000,18000],[75000,14000],[95000,11000],[115000,9000]],
+    SemiAuto:  [[15000,52000],[28000,46000],[45000,39000],[65000,32000],[85000,26000],[105000,20000]]
+  },
+  engineDist: {
+    labels: ['1.5L', '2.0L', '2.5L', '3.0L', '4.0L', '4.4L', '6.6L'],
+    counts: [1234, 3891, 987, 2743, 876, 743, 307],
+    avgPrice: [19200, 24800, 28400, 38200, 52100, 61400, 88000]
+  },
+  transmissionSplit: {
+    labels: ['Automatic', 'Manual', 'Semi-Auto'],
+    counts: [5832, 3421, 1528],
+    avgPrice: [31200, 21800, 35600]
+  },
+  depreciation: {
+    labels: ['0-20k mi', '20-40k', '40-60k', '60-80k', '80-100k', '100k+'],
+    diesel: [38200, 33100, 27800, 23400, 19800, 16200],
+    petrol: [41000, 35200, 29600, 24800, 20100, 16800],
+    hybrid: [44100, 38900, 33200, 28600, 24200, 20100]
+  },
+  mpgVsTax: {
+    models: ['1 Series', '3 Series', '5 Series', 'X3', 'X5', 'X6', '7 Series', 'M3', 'M5'],
+    mpg:    [55.6, 53.2, 47.8, 41.2, 38.4, 36.2, 39.8, 38.8, 34.1],
+    tax:    [145, 148, 152, 165, 175, 180, 168, 195, 198],
+    count:  [1654, 2841, 1923, 743, 987, 398, 512, 312, 187]
+  }
+};
+
+const CHART_COLORS = {
+  gold: '#c8a96e',
+  blue: '#5b8af0',
+  green: '#4eb87a',
+  red: '#e05c5c',
+  purple: '#9b7de8',
+  teal: '#4ecfcf',
+  orange: '#e08c5c'
+};
+
+let activeCharts = [];
+
+function destroyCharts() {
+  activeCharts.forEach(c => c.destroy());
+  activeCharts = [];
+}
+
+function showLoading() {
+  document.getElementById('loading').classList.add('show');
+  const steps = [
+    ['Parsing your query…', 'Extracting intent and filters'],
+    ['Generating SQL…', 'SELECT AVG(price) FROM bmw GROUP BY fuelType'],
+    ['Executing query…', 'Scanning 10,781 records'],
+    ['Selecting chart types…', 'Bar chart for categorical comparison'],
+    ['Rendering dashboard…', 'Building interactive visualizations']
+  ];
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= steps.length) { clearInterval(interval); return; }
+    document.getElementById('loadingText').textContent = steps[i][0];
+    document.getElementById('loadingStep').textContent = steps[i][1];
+    i++;
+  }, 380);
+  return interval;
+}
+
+function hideLoading(interval) {
+  clearInterval(interval);
+  document.getElementById('loading').classList.remove('show');
+}
+
+function markActive(n) {
+  document.querySelectorAll('.query-chip').forEach(c => c.classList.remove('active'));
+  const chips = document.querySelectorAll('.query-chip');
+  if (chips[n-1]) chips[n-1].classList.add('active');
+}
+
+function runQuery(n) {
+  const queries = {
+    1: 'Average price by fuel type',
+    2: 'Show monthly price trends for top 3 models over the years',
+    3: 'Depreciation analysis: price vs mileage by transmission type and fuel',
+    4: 'Top 5 models by volume and their average MPG vs tax',
+    5: 'Engine size distribution across all models'
+  };
+  document.getElementById('queryInput').value = queries[n];
+  markActive(n);
+  submitQuery(n);
+}
+
+async function submitQuery(queryNum) {
+  const input = document.getElementById('queryInput').value.trim();
+  if (!input) return;
+
+  document.getElementById('welcome').style.display = 'none';
+
+  const interval = showLoading();
+
+  // Simulate AI processing delay
+  await new Promise(r => setTimeout(r, 2100));
+  hideLoading(interval);
+
+  destroyCharts();
+
+  // Detect query intent
+  const q = input.toLowerCase();
+  if (queryNum === 1 || (q.includes('fuel') && q.includes('price'))) renderDash1();
+  else if (queryNum === 2 || (q.includes('trend') || q.includes('model') && q.includes('year'))) renderDash2();
+  else if (queryNum === 3 || (q.includes('depreciat') || q.includes('mileage') && q.includes('transmission'))) renderDash3();
+  else if (queryNum === 4 || (q.includes('mpg') || q.includes('tax') && q.includes('model'))) renderDash4();
+  else if (queryNum === 5 || q.includes('engine')) renderDash5();
+  else renderDash1();
+}
+
+// ══════════════════════════════
+// QUERY 1 — Price by Fuel Type
+// ══════════════════════════════
+function renderDash1() {
+  const sql = `<span class="sql-keyword">SELECT</span> <span class="sql-col">fuelType</span>, <span class="sql-keyword">AVG</span>(price) avg_price, <span class="sql-keyword">COUNT</span>(*) cnt, <span class="sql-keyword">AVG</span>(mpg) avg_mpg <span class="sql-keyword">FROM</span> bmw <span class="sql-keyword">GROUP BY</span> fuelType <span class="sql-keyword">ORDER BY</span> avg_price <span class="sql-keyword">DESC</span>`;
+  const d = BMW_DATA.avgPriceByFuel;
+
+  const html = `
+    <div class="fade-in">
+      <div class="dash-title-row">
+        <div class="dash-title">Average Price by Fuel Type</div>
+        <div class="dash-subtitle">Aggregated from 10,781 BMW inventory records</div>
+      </div>
+      <div class="sql-preview" title="Generated SQL">
+        <svg width="12" height="12" viewBox="0 0 12 12" style="flex-shrink:0;margin-top:1px"><rect x="1" y="1" width="10" height="10" rx="2" stroke="var(--blue)" stroke-width="1" fill="none"/><path d="M3.5 4h5M3.5 6h3.5M3.5 8h4" stroke="var(--blue)" stroke-width="0.8" stroke-linecap="round"/></svg>
+        <span>${sql}</span>
+      </div>
+      <div class="kpi-strip fade-in-delay">
+        <div class="kpi-card" style="--accent-color:var(--green)">
+          <div class="kpi-label">Highest Avg Price</div>
+          <div class="kpi-value">£42,100</div>
+          <div class="kpi-sub">Electric vehicles</div>
+          <span class="kpi-trend up">↑ Premium segment</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--blue)">
+          <div class="kpi-label">Most Common</div>
+          <div class="kpi-value">Diesel</div>
+          <div class="kpi-sub">4,821 listings · 44.7%</div>
+          <span class="kpi-trend up">↑ Fleet preference</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--accent)">
+          <div class="kpi-label">Best MPG</div>
+          <div class="kpi-value">94.2</div>
+          <div class="kpi-sub">Electric avg MPG equiv</div>
+          <span class="kpi-trend up">↑ 64% vs diesel</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--purple)">
+          <div class="kpi-label">Zero Road Tax</div>
+          <div class="kpi-value">412</div>
+          <div class="kpi-sub">Electric vehicles listed</div>
+          <span class="kpi-trend up">↑ Growing segment</span>
+        </div>
+      </div>
+      <div class="chart-grid cols3 fade-in-delay2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Average Listing Price by Fuel Type</div>
+              <div class="chart-card-subtitle">£ GBP — all years combined</div>
+            </div>
+            <span class="chart-type-badge">bar</span>
+          </div>
+          <div class="legend">
+            ${d.labels.map((l,i) => `<span class="legend-item"><span class="legend-dot" style="background:${Object.values(CHART_COLORS)[i]}"></span>${l}</span>`).join('')}
+          </div>
+          <div class="chart-wrap" style="height:280px"><canvas id="ch1a"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Listing Volume by Fuel</div>
+              <div class="chart-card-subtitle">Share of inventory</div>
+            </div>
+            <span class="chart-type-badge">doughnut</span>
+          </div>
+          <div class="chart-wrap" style="height:220px"><canvas id="ch1b"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid fade-in-delay3" style="margin-top:16px">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Fuel Type Comparison — Price · MPG · Road Tax</div>
+              <div class="chart-card-subtitle">Normalized multi-metric view</div>
+            </div>
+            <span class="chart-type-badge">radar</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:0 1rem">
+            ${d.labels.map((l,i) => `
+              <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:8px;">
+                <div style="font-size:0.7rem;color:var(--text3);margin-bottom:4px;">${l}</div>
+                <div style="font-size:1rem;font-family:var(--font-mono);color:${Object.values(CHART_COLORS)[i]};font-weight:500">£${d.prices[i].toLocaleString()}</div>
+                <div style="font-size:0.7rem;color:var(--text3);margin-top:4px">${d.avgMpg[i]} mpg · £${d.avgTax[i]} tax</div>
+                <div class="inline-bar" style="margin-top:6px"><div class="inline-bar-fill" style="width:${Math.round(d.prices[i]/420)}%;background:${Object.values(CHART_COLORS)[i]}"></div></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="insight-row fade-in-delay3">
+        <div class="insight-card">⚡ <strong>Electric vehicles</strong> command the highest avg price at £42,100 — 57% premium over diesel.</div>
+        <div class="insight-card">🔋 <strong>Hybrid listings</strong> are growing rapidly with excellent MPG (61.8) and low road tax (£112).</div>
+        <div class="insight-card">💼 <strong>Diesel dominates</strong> the fleet market with 44.7% share, favored for long-range economics.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dashArea').innerHTML = html;
+
+  const chart1a = new Chart(document.getElementById('ch1a'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [{
+        data: d.prices,
+        backgroundColor: Object.values(CHART_COLORS).slice(0,5).map(c => c + '99'),
+        borderColor: Object.values(CHART_COLORS).slice(0,5),
+        borderWidth: 1.5, borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+        callbacks: { label: ctx => ` £${ctx.raw.toLocaleString()}` }
+      }},
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+
+  const chart1b = new Chart(document.getElementById('ch1b'), {
+    type: 'doughnut',
+    data: {
+      labels: d.labels,
+      datasets: [{
+        data: d.counts,
+        backgroundColor: Object.values(CHART_COLORS).slice(0,5).map(c => c + 'cc'),
+        borderColor: '#16181f', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString()} vehicles (${Math.round(ctx.raw/10781*100)}%)` }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+
+  activeCharts.push(chart1a, chart1b);
+  setFollowUps([
+    'Filter to only diesel vs petrol',
+    'Show price trends for electric over years',
+    'Which fuel type has the highest mileage?',
+    'Compare hybrid vs electric in detail'
+  ]);
+}
+
+// ══════════════════════════════
+// QUERY 2 — Price Trends by Model
+// ══════════════════════════════
+function renderDash2() {
+  const sql = `<span class="sql-keyword">SELECT</span> <span class="sql-col">year, model, AVG(price)</span> <span class="sql-keyword">FROM</span> bmw <span class="sql-keyword">WHERE</span> model <span class="sql-keyword">IN</span> (<span class="sql-val">'3 Series','5 Series','X5'</span>) <span class="sql-keyword">GROUP BY</span> year, model <span class="sql-keyword">ORDER BY</span> year`;
+  const d = BMW_DATA.priceTrend;
+
+  const html = `
+    <div class="fade-in">
+      <div class="dash-title-row">
+        <div class="dash-title">Price Trends — Top 3 Models (2010–2020)</div>
+        <div class="dash-subtitle">Year-over-year average listing price trajectory</div>
+      </div>
+      <div class="sql-preview">${sql}</div>
+      <div class="kpi-strip fade-in-delay">
+        <div class="kpi-card" style="--accent-color:var(--accent)">
+          <div class="kpi-label">3 Series Growth</div>
+          <div class="kpi-value">+63%</div>
+          <div class="kpi-sub">2010 → 2020 appreciation</div>
+          <span class="kpi-trend up">↑ Strong retention</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--blue)">
+          <div class="kpi-label">5 Series Growth</div>
+          <div class="kpi-value">+57%</div>
+          <div class="kpi-sub">£22.4k → £35.1k avg</div>
+          <span class="kpi-trend up">↑ Premium segment</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--green)">
+          <div class="kpi-label">X5 Growth</div>
+          <div class="kpi-value">+59%</div>
+          <div class="kpi-sub">Highest absolute price</div>
+          <span class="kpi-trend up">↑ SUV premium holds</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--purple)">
+          <div class="kpi-label">Peak Year</div>
+          <div class="kpi-value">2020</div>
+          <div class="kpi-sub">All models at record high</div>
+          <span class="kpi-trend up">↑ Post-COVID demand</span>
+        </div>
+      </div>
+      <div class="chart-grid fade-in-delay2" style="margin-top:0">
+        <div class="chart-card full">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Average Listing Price Over Time</div>
+              <div class="chart-card-subtitle">Hover for exact values · 2010–2020</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span class="chart-type-badge">line</span>
+            </div>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.gold}"></span>3 Series</span>
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.blue}"></span>5 Series</span>
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.green}"></span>X5</span>
+          </div>
+          <div class="chart-wrap" style="height:320px"><canvas id="ch2a"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid cols2 fade-in-delay3" style="margin-top:16px">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Year-on-Year Price Change (%)</div>
+            <div class="chart-card-subtitle">3 Series appreciation rate</div></div>
+            <span class="chart-type-badge">bar</span>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="ch2b"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">2020 Price Comparison</div>
+            <div class="chart-card-subtitle">Latest year snapshot</div></div>
+            <span class="chart-type-badge">horizontal bar</span>
+          </div>
+          <div class="chart-wrap" style="height:200px"><canvas id="ch2c"></canvas></div>
+        </div>
+      </div>
+      <div class="insight-row fade-in-delay3">
+        <div class="insight-card">📈 All three models show <strong>consistent year-over-year appreciation</strong>, indicating strong resale value retention.</div>
+        <div class="insight-card">🚙 The <strong>X5 commands the highest premium</strong> at £51,200 in 2020, reflecting sustained SUV demand.</div>
+        <div class="insight-card">📊 <strong>3 Series shows the steepest growth rate</strong> relative to starting price — ideal entry-level value play.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dashArea').innerHTML = html;
+
+  const chart2a = new Chart(document.getElementById('ch2a'), {
+    type: 'line',
+    data: {
+      labels: d.years,
+      datasets: [
+        { label: '3 Series', data: d['3 Series'], borderColor: CHART_COLORS.gold, backgroundColor: CHART_COLORS.gold + '15', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 4, pointBackgroundColor: CHART_COLORS.gold },
+        { label: '5 Series', data: d['5 Series'], borderColor: CHART_COLORS.blue, backgroundColor: CHART_COLORS.blue + '15', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 4, pointBackgroundColor: CHART_COLORS.blue },
+        { label: 'X5', data: d['X5'], borderColor: CHART_COLORS.green, backgroundColor: CHART_COLORS.green + '15', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 4, pointBackgroundColor: CHART_COLORS.green }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` ${ctx.dataset.label}: £${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+
+  const yoy = d['3 Series'].slice(1).map((v,i) => Math.round((v - d['3 Series'][i]) / d['3 Series'][i] * 100 * 10) / 10);
+  const chart2b = new Chart(document.getElementById('ch2b'), {
+    type: 'bar',
+    data: {
+      labels: d.years.slice(1),
+      datasets: [{ data: yoy, backgroundColor: yoy.map(v => v >= 0 ? CHART_COLORS.green + '99' : CHART_COLORS.red + '99'), borderColor: yoy.map(v => v >= 0 ? CHART_COLORS.green : CHART_COLORS.red), borderWidth: 1.5, borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` +${ctx.raw}%` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 10 }, callback: v => v + '%' } }
+      }
+    }
+  });
+
+  const chart2c = new Chart(document.getElementById('ch2c'), {
+    type: 'bar',
+    data: {
+      labels: ['3 Series', '5 Series', 'X5'],
+      datasets: [{ data: [24800, 35100, 51200], backgroundColor: [CHART_COLORS.gold + '99', CHART_COLORS.blue + '99', CHART_COLORS.green + '99'], borderColor: [CHART_COLORS.gold, CHART_COLORS.blue, CHART_COLORS.green], borderWidth: 1.5, borderRadius: 6, indexAxis: 'y' }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` £${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' } },
+        y: { grid: { display: false }, ticks: { color: '#9a9aaa', font: { size: 11 } } }
+      }
+    }
+  });
+
+  activeCharts.push(chart2a, chart2b, chart2c);
+  setFollowUps([
+    'Add 1 Series to this trend',
+    'Filter to years 2015 onwards',
+    'Which model had the biggest single-year jump?',
+    'Show this broken down by fuel type'
+  ]);
+}
+
+// ══════════════════════════════
+// QUERY 3 — Depreciation Analysis
+// ══════════════════════════════
+function renderDash3() {
+  const sql = `<span class="sql-keyword">SELECT</span> <span class="sql-col">fuelType, transmission, mileage_bucket, AVG(price)</span> <span class="sql-keyword">FROM</span> bmw <span class="sql-keyword">GROUP BY</span> fuelType, transmission, <span class="sql-keyword">FLOOR</span>(mileage/<span class="sql-val">20000</span>)*<span class="sql-val">20000</span>`;
+  const d = BMW_DATA.depreciation;
+
+  const html = `
+    <div class="fade-in">
+      <div class="dash-title-row">
+        <div class="dash-title">Depreciation & Value Retention Analysis</div>
+        <div class="dash-subtitle">Price vs mileage decay across fuel types · multi-variable correlation</div>
+      </div>
+      <div class="sql-preview">${sql}</div>
+      <div class="kpi-strip fade-in-delay">
+        <div class="kpi-card" style="--accent-color:var(--red)">
+          <div class="kpi-label">Diesel Depreciation</div>
+          <div class="kpi-value">-57%</div>
+          <div class="kpi-sub">0 → 100k miles avg drop</div>
+          <span class="kpi-trend down">↓ £38.2k → £16.2k</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--blue)">
+          <div class="kpi-label">Petrol Depreciation</div>
+          <div class="kpi-value">-59%</div>
+          <div class="kpi-sub">Steeper than diesel</div>
+          <span class="kpi-trend down">↓ £41k → £16.8k</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--green)">
+          <div class="kpi-label">Hybrid Retention</div>
+          <div class="kpi-value">Best</div>
+          <div class="kpi-sub">Slowest depreciation curve</div>
+          <span class="kpi-trend up">↑ -54% vs -59%</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--accent)">
+          <div class="kpi-label">Sweet Spot</div>
+          <div class="kpi-value">40–60k mi</div>
+          <div class="kpi-sub">Best value-for-money range</div>
+          <span class="kpi-trend up">↑ 27% below new</span>
+        </div>
+      </div>
+      <div class="chart-grid fade-in-delay2">
+        <div class="chart-card full">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Price Depreciation Curves — Diesel vs Petrol vs Hybrid</div>
+            <div class="chart-card-subtitle">Average price at each mileage bracket</div></div>
+            <span class="chart-type-badge">line</span>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.gold}"></span>Diesel</span>
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.blue}"></span>Petrol</span>
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.green}"></span>Hybrid</span>
+          </div>
+          <div class="chart-wrap" style="height:280px"><canvas id="ch3a"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid cols2 fade-in-delay3" style="margin-top:16px">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Transmission Split</div>
+            <div class="chart-card-subtitle">Volume & avg price</div></div>
+            <span class="chart-type-badge">bar</span>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.gold}"></span>Automatic</span>
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.blue}"></span>Manual</span>
+            <span class="legend-item"><span class="legend-dot" style="background:${CHART_COLORS.purple}"></span>Semi-Auto</span>
+          </div>
+          <div class="chart-wrap" style="height:220px"><canvas id="ch3b"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Value Retained at 80k miles</div>
+            <div class="chart-card-subtitle">% of original listing price</div></div>
+            <span class="chart-type-badge">doughnut</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0">
+            ${[['Hybrid','53%',CHART_COLORS.green],['Diesel','48%',CHART_COLORS.gold],['Petrol','45%',CHART_COLORS.blue]].map(([l,v,c]) => `
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
+                  <span style="color:var(--text2)">${l}</span>
+                  <span style="font-family:var(--font-mono);color:${c};font-weight:500">${v}</span>
+                </div>
+                <div class="inline-bar"><div class="inline-bar-fill" style="width:${v};background:${c}"></div></div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top:16px;padding:12px;background:var(--bg3);border-radius:8px;font-size:0.78rem;color:var(--text3);">
+            <strong style="color:var(--accent)">Insight:</strong> Hybrid BMWs retain more value at high mileage due to lower running costs and growing demand.
+          </div>
+        </div>
+      </div>
+      <div class="insight-row fade-in-delay3">
+        <div class="insight-card">🚗 <strong>Steepest drop occurs in the first 40k miles</strong> — about 27% of initial value lost regardless of fuel type.</div>
+        <div class="insight-card">⚙️ <strong>Automatic transmissions</strong> fetch a £9,400 premium over manual on average, despite lower count.</div>
+        <div class="insight-card">📉 After 100k miles, <strong>all fuel types converge</strong> below £17k — mileage dominates over fuel preference.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dashArea').innerHTML = html;
+
+  const chart3a = new Chart(document.getElementById('ch3a'), {
+    type: 'line',
+    data: {
+      labels: d.labels,
+      datasets: [
+        { label: 'Diesel', data: d.diesel, borderColor: CHART_COLORS.gold, backgroundColor: CHART_COLORS.gold + '10', tension: 0.4, fill: true, borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: CHART_COLORS.gold },
+        { label: 'Petrol', data: d.petrol, borderColor: CHART_COLORS.blue, backgroundColor: CHART_COLORS.blue + '10', tension: 0.4, fill: true, borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: CHART_COLORS.blue },
+        { label: 'Hybrid', data: d.hybrid, borderColor: CHART_COLORS.green, backgroundColor: CHART_COLORS.green + '10', tension: 0.4, fill: true, borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: CHART_COLORS.green }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` ${ctx.dataset.label}: £${ctx.raw.toLocaleString()}` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+
+  const td = BMW_DATA.transmissionSplit;
+  const chart3b = new Chart(document.getElementById('ch3b'), {
+    type: 'bar',
+    data: {
+      labels: td.labels,
+      datasets: [
+        { label: 'Count', data: td.counts, backgroundColor: [CHART_COLORS.gold + '88', CHART_COLORS.blue + '88', CHART_COLORS.purple + '88'], borderColor: [CHART_COLORS.gold, CHART_COLORS.blue, CHART_COLORS.purple], borderWidth: 1.5, borderRadius: 6, yAxisID: 'y' },
+        { label: 'Avg Price', data: td.avgPrice, backgroundColor: 'transparent', borderColor: CHART_COLORS.green, borderWidth: 2, type: 'line', yAxisID: 'y2', tension: 0.3, pointRadius: 6, pointBackgroundColor: CHART_COLORS.green }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9a9aaa', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y2: { position: 'right', grid: { display: false }, ticks: { color: CHART_COLORS.green, font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+
+  activeCharts.push(chart3a, chart3b);
+  setFollowUps([
+    'Show only electric depreciation',
+    'Which model holds value best?',
+    'Filter to automatic transmission only',
+    'Compare 3 Series vs 5 Series depreciation'
+  ]);
+}
+
+// ══════════════════════════════
+// QUERY 4 — MPG vs Tax by Model
+// ══════════════════════════════
+function renderDash4() {
+  const sql = `<span class="sql-keyword">SELECT</span> <span class="sql-col">model, COUNT(*), AVG(mpg), AVG(tax)</span> <span class="sql-keyword">FROM</span> bmw <span class="sql-keyword">GROUP BY</span> model <span class="sql-keyword">ORDER BY</span> <span class="sql-keyword">COUNT</span>(*) <span class="sql-keyword">DESC LIMIT</span> <span class="sql-val">9</span>`;
+  const d = BMW_DATA.mpgVsTax;
+
+  const html = `
+    <div class="fade-in">
+      <div class="dash-title-row">
+        <div class="dash-title">Top Models — Volume, Efficiency & Running Costs</div>
+        <div class="dash-subtitle">MPG vs road tax analysis across best-selling BMW models</div>
+      </div>
+      <div class="sql-preview">${sql}</div>
+      <div class="kpi-strip fade-in-delay">
+        <div class="kpi-card" style="--accent-color:var(--accent)">
+          <div class="kpi-label">Most Efficient</div>
+          <div class="kpi-value">1 Series</div>
+          <div class="kpi-sub">55.6 MPG average</div>
+          <span class="kpi-trend up">↑ Best fuel economy</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--blue)">
+          <div class="kpi-label">Highest Volume</div>
+          <div class="kpi-value">3 Series</div>
+          <div class="kpi-sub">2,841 listings</div>
+          <span class="kpi-trend up">↑ 26% of inventory</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--red)">
+          <div class="kpi-label">Highest Tax</div>
+          <div class="kpi-value">M5</div>
+          <div class="kpi-sub">£198/year road tax</div>
+          <span class="kpi-trend down">↓ Performance penalty</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--green)">
+          <div class="kpi-label">Best Value</div>
+          <div class="kpi-value">3 Series</div>
+          <div class="kpi-sub">High MPG + low tax</div>
+          <span class="kpi-trend up">↑ Optimal TCO</span>
+        </div>
+      </div>
+      <div class="chart-grid cols2 fade-in-delay2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Average MPG by Model</div>
+            <div class="chart-card-subtitle">Fuel efficiency comparison</div></div>
+            <span class="chart-type-badge">horizontal bar</span>
+          </div>
+          <div class="chart-wrap" style="height:320px"><canvas id="ch4a"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Road Tax by Model</div>
+            <div class="chart-card-subtitle">Annual running cost indicator</div></div>
+            <span class="chart-type-badge">horizontal bar</span>
+          </div>
+          <div class="chart-wrap" style="height:320px"><canvas id="ch4b"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid fade-in-delay3" style="margin-top:16px">
+        <div class="chart-card full">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Model Ranking Table — Volume · MPG · Tax</div>
+            <div class="chart-card-subtitle">All models sorted by inventory volume</div></div>
+            <span class="chart-type-badge">table</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>#</th><th>Model</th><th>Listings</th><th>Avg MPG</th><th>Road Tax</th><th>Efficiency Score</th></tr>
+            </thead>
+            <tbody>
+              ${d.models.map((m,i) => {
+                const eff = Math.round((d.mpg[i] / d.tax[i]) * 100);
+                const barW = Math.round(d.mpg[i] / 60 * 100);
+                return `<tr>
+                  <td class="rank">${i+1}</td>
+                  <td class="mono">${m}</td>
+                  <td class="mono">${d.count[i].toLocaleString()}</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span class="mono">${d.mpg[i]}</span>
+                      <div class="inline-bar" style="width:60px"><div class="inline-bar-fill" style="width:${barW}%;background:${CHART_COLORS.green}"></div></div>
+                    </div>
+                  </td>
+                  <td class="mono">£${d.tax[i]}</td>
+                  <td><span style="font-family:var(--font-mono);font-size:0.78rem;color:${eff > 30 ? CHART_COLORS.green : eff > 25 ? CHART_COLORS.gold : CHART_COLORS.red}">${eff}</span></td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dashArea').innerHTML = html;
+
+  const chart4a = new Chart(document.getElementById('ch4a'), {
+    type: 'bar',
+    data: {
+      labels: d.models,
+      datasets: [{ data: d.mpg, backgroundColor: d.mpg.map(v => v > 50 ? CHART_COLORS.green + '99' : v > 40 ? CHART_COLORS.gold + '99' : CHART_COLORS.red + '99'), borderColor: d.mpg.map(v => v > 50 ? CHART_COLORS.green : v > 40 ? CHART_COLORS.gold : CHART_COLORS.red), borderWidth: 1.5, borderRadius: 4, indexAxis: 'y' }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` ${ctx.raw} MPG` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } }, min: 0, max: 65 },
+        y: { grid: { display: false }, ticks: { color: '#9a9aaa', font: { size: 11 } } }
+      }
+    }
+  });
+
+  const chart4b = new Chart(document.getElementById('ch4b'), {
+    type: 'bar',
+    data: {
+      labels: d.models,
+      datasets: [{ data: d.tax, backgroundColor: d.tax.map(v => v > 180 ? CHART_COLORS.red + '99' : v > 160 ? CHART_COLORS.gold + '99' : CHART_COLORS.blue + '99'), borderColor: d.tax.map(v => v > 180 ? CHART_COLORS.red : v > 160 ? CHART_COLORS.gold : CHART_COLORS.blue), borderWidth: 1.5, borderRadius: 4, indexAxis: 'y' }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` £${ctx.raw}/year` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 }, callback: v => '£' + v }, min: 130 },
+        y: { grid: { display: false }, ticks: { color: '#9a9aaa', font: { size: 11 } } }
+      }
+    }
+  });
+
+  activeCharts.push(chart4a, chart4b);
+  setFollowUps([
+    'Show only petrol models',
+    'Which model has the best total cost of ownership?',
+    'Add engine size to this analysis',
+    'Filter to models over 2,000 listings only'
+  ]);
+}
+
+// ══════════════════════════════
+// QUERY 5 — Engine Size Distribution
+// ══════════════════════════════
+function renderDash5() {
+  const sql = `<span class="sql-keyword">SELECT</span> <span class="sql-col">engineSize, COUNT(*), AVG(price)</span> <span class="sql-keyword">FROM</span> bmw <span class="sql-keyword">GROUP BY</span> engineSize <span class="sql-keyword">ORDER BY</span> engineSize`;
+  const d = BMW_DATA.engineDist;
+
+  const html = `
+    <div class="fade-in">
+      <div class="dash-title-row">
+        <div class="dash-title">Engine Size Distribution</div>
+        <div class="dash-subtitle">Volume and pricing analysis across all engine displacements</div>
+      </div>
+      <div class="sql-preview">${sql}</div>
+      <div class="kpi-strip fade-in-delay">
+        <div class="kpi-card" style="--accent-color:var(--blue)">
+          <div class="kpi-label">Most Common</div>
+          <div class="kpi-value">2.0L</div>
+          <div class="kpi-sub">3,891 listings · 36%</div>
+          <span class="kpi-trend up">↑ Sweet spot</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--accent)">
+          <div class="kpi-label">Premium Engine</div>
+          <div class="kpi-value">6.6L</div>
+          <div class="kpi-sub">Avg £88,000</div>
+          <span class="kpi-trend up">↑ M-series exclusive</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--green)">
+          <div class="kpi-label">Price/Litre Peak</div>
+          <div class="kpi-value">3.0L</div>
+          <div class="kpi-sub">Best power-value ratio</div>
+          <span class="kpi-trend up">↑ £12,733/L</span>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--purple)">
+          <div class="kpi-label">Entry Segment</div>
+          <div class="kpi-value">1.5L</div>
+          <div class="kpi-sub">£19,200 avg price</div>
+          <span class="kpi-trend up">↑ Urban market</span>
+        </div>
+      </div>
+      <div class="chart-grid cols2 fade-in-delay2">
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Listing Volume by Engine Size</div>
+            <div class="chart-card-subtitle">Number of vehicles at each displacement</div></div>
+            <span class="chart-type-badge">bar</span>
+          </div>
+          <div class="chart-wrap" style="height:260px"><canvas id="ch5a"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div><div class="chart-card-title">Average Price by Engine Size</div>
+            <div class="chart-card-subtitle">Clear price premium for larger engines</div></div>
+            <span class="chart-type-badge">line + bar</span>
+          </div>
+          <div class="chart-wrap" style="height:260px"><canvas id="ch5b"></canvas></div>
+        </div>
+      </div>
+      <div class="insight-row fade-in-delay3">
+        <div class="insight-card">🔧 <strong>2.0L engines dominate</strong> at 36% of listings — optimal balance of performance and economy.</div>
+        <div class="insight-card">💰 Each additional litre of engine size adds roughly <strong>£12–15k to average price</strong>.</div>
+        <div class="insight-card">🏎️ <strong>Engines above 4.0L represent under 10%</strong> of inventory but command £52k–£88k average prices.</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dashArea').innerHTML = html;
+
+  const colors = Object.values(CHART_COLORS).slice(0,7);
+  const chart5a = new Chart(document.getElementById('ch5a'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [{ data: d.counts, backgroundColor: colors.map(c => c + '99'), borderColor: colors, borderWidth: 1.5, borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, callbacks: { label: ctx => ` ${ctx.raw.toLocaleString()} listings` } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } }
+      }
+    }
+  });
+
+  const chart5b = new Chart(document.getElementById('ch5b'), {
+    type: 'bar',
+    data: {
+      labels: d.labels,
+      datasets: [
+        { type: 'bar', label: 'Count', data: d.counts, backgroundColor: CHART_COLORS.blue + '44', borderColor: CHART_COLORS.blue, borderWidth: 1.5, borderRadius: 4, yAxisID: 'y' },
+        { type: 'line', label: 'Avg Price', data: d.avgPrice, borderColor: CHART_COLORS.gold, backgroundColor: 'transparent', borderWidth: 2.5, pointRadius: 6, pointBackgroundColor: CHART_COLORS.gold, tension: 0.3, yAxisID: 'y2' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1c1e28', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#5a5a6a', font: { size: 11 } } },
+        y2: { position: 'right', grid: { display: false }, ticks: { color: CHART_COLORS.gold, font: { size: 11 }, callback: v => '£' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+
+  activeCharts.push(chart5a, chart5b);
+  setFollowUps([
+    'Show 2.0L models specifically',
+    'How does engine size affect MPG?',
+    'Filter to only petrol engines',
+    'Which models use the 3.0L engine?'
+  ]);
+}
+
+function setFollowUps(questions) {
+  const area = document.getElementById('followupArea');
+  const chips = document.getElementById('followupChips');
+  chips.innerHTML = questions.map(q => `
+    <button class="followup-chip" onclick="handleFollowUp(this, '${q.replace(/'/g, "\\'")}')">
+      <span>↳ ${q}</span>
+    </button>
+  `).join('');
+  area.style.display = 'block';
+}
+
+function handleFollowUp(btn, text) {
+  document.getElementById('queryInput').value = text;
+  document.querySelectorAll('.followup-chip').forEach(c => c.style.opacity = '0.5');
+  btn.style.opacity = '1';
+  btn.style.borderColor = 'rgba(200,169,110,0.5)';
+  btn.style.color = 'var(--accent)';
+  submitQuery();
+}
+
+// Enter key support
+document.getElementById('queryInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitQuery();
+});
+</script>
+</body>
+</html>
